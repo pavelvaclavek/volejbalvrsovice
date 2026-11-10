@@ -1,0 +1,14 @@
+# Výstupy buildu
+bin/
+obj/
+artifacts/
+TestResults/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+
+# Data aplikace (kdyby někdo spouštěl kopii přímo z repozitáře)
+/Data/

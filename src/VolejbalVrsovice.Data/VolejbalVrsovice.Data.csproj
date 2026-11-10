@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Úložiště: složka Data, zámek instance, SQLite (SQLCipher), Dapper, migrace, repozitáře. -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VolejbalVrsovice.Core\VolejbalVrsovice.Core.csproj" />
+  </ItemGroup>
+
+</Project>

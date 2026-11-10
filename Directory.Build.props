@@ -1,0 +1,20 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- Závazná verze jazyka (zadání, sekce 2): C# 7.3 – žádné records, init, file-scoped namespaces,
+         global usings ani nullable reference types. -->
+    <LangVersion>7.3</LangVersion>
+
+    <!-- Každý krok končí buildem bez warningů – warning je proto rovnou chyba. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Výchozí verze pro lokální build. Release ji přepisuje z tagu: -p:Version=X.Y.Z -->
+    <Version>0.1.0</Version>
+    <Product>Volejbal Vršovice</Product>
+    <Company>TJ Sokol Praha Vršovice</Company>
+
+    <!-- Verze zobrazená v aplikaci má být přesně X.Y.Z, bez přípony "+hash commitu". -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+</Project>
