@@ -58,6 +58,7 @@ function Test-IncludeInPackage {
     if ($path -match '^runtimes\\') {                           # nativni knihovny: jen x64 SQLCipher
         return ($path -ieq 'runtimes\win-x64\native\e_sqlcipher.dll')
     }
+    if ($path -ieq 'e_sqlcipher.dll') { return $false }         # druha kopie v koreni (aplikace cte tu z runtimes\)
 
     return $true
 }
@@ -138,8 +139,21 @@ try {
 
     Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [System.IO.Compression.ZipFile]::CreateFromDirectory(
-        $stage, $zipPath, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+
+    # Polozky se pridavaji rucne s '/' v nazvu. ZipFile.CreateFromDirectory by ve Windows PowerShellu 5.1
+    # zapsal zpetna lomitka, coz neodpovida specifikaci ZIPu (jine nez windowsove nastroje by slozky nerozbalily).
+    $stageRoot = (Resolve-Path -LiteralPath $stage).Path.TrimEnd('\') + '\'
+    $archive = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($file in Get-ChildItem -LiteralPath $stage -Recurse -File | Sort-Object FullName) {
+            $entryName = $file.FullName.Substring($stageRoot.Length).Replace('\', '/')
+            [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $archive, $file.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal)
+        }
+    }
+    finally {
+        $archive.Dispose()
+    }
 }
 finally {
     Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue

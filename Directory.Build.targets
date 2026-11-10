@@ -14,4 +14,15 @@
     </ItemGroup>
   </Target>
 
+  <!--
+    U projektu .exe si SDK samo odvodí RuntimeIdentifier (win-x64) a NuGet pak nativní knihovnu zkopíruje
+    ještě jednou – do kořene výstupu. Aplikace ji načítá z runtimes\win-x64\native (tam ji dodává projekt
+    Data), takže kopie v kořeni by jen zbytečně zvětšovala ZIP (~1,8 MB).
+  -->
+  <Target Name="RemoveDuplicateNativeLibraries" AfterTargets="ResolveLockFileCopyLocalFiles">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths Remove="@(NativeCopyLocalItems)" />
+    </ItemGroup>
+  </Target>
+
 </Project>
