@@ -12,6 +12,10 @@ using Serilog;
 using VolejbalVrsovice.App.Bootstrap;
 using VolejbalVrsovice.App.ViewModels;
 using VolejbalVrsovice.App.Views;
+using VolejbalVrsovice.Core.Errors;
+using VolejbalVrsovice.Core.Services;
+using VolejbalVrsovice.Data.Db;
+using VolejbalVrsovice.Data.Security;
 using VolejbalVrsovice.Data.Storage;
 
 namespace VolejbalVrsovice.App
@@ -106,6 +110,22 @@ namespace VolejbalVrsovice.App
 
             _services = ConfigureServices(paths);
 
+            // 4) Úložiště dat – rozhodovací tabulka při startu (zadání, sekce 5a).
+            var dataStore = _services.GetRequiredService<DataStore>();
+            switch (dataStore.Inspect())
+            {
+                case DataStoreState.Inconsistent:
+                    // Existuje jen databáze, nebo jen soubor klíčů: nic nevytvářet ani nepřepisovat.
+                    Log.Error("Úložiště dat je neúplné – chybí databáze nebo soubor klíčů");
+                    ShowError(DataStoreMismatchException.UserMessage);
+                    Shutdown(ExitCodes.DataStoreInconsistent);
+                    return;
+
+                case DataStoreState.FirstRun:
+                    dataStore.CreateNew();
+                    break;
+            }
+
             var window = _services.GetRequiredService<MainWindow>();
             window.Closed += (sender, args) => Shutdown(ExitCodes.Ok);
             MainWindow = window;
@@ -118,6 +138,16 @@ namespace VolejbalVrsovice.App
 
             services.AddSingleton(paths);
             services.AddSingleton(Log.Logger);
+            services.AddSingleton<IClock, SystemClock>();
+
+            // Úložiště dat: šifrovaná databáze + soubor klíčů.
+            services.AddSingleton(KdfSettings.Default);
+            services.AddSingleton(new KeyStore(paths.KeysFile));
+            services.AddSingleton(new SqliteConnectionFactory(paths.DatabaseFile));
+            // Instanci vytvořit ručně: kontejner by jinak zvolil konstruktor s (prázdným) seznamem migrací.
+            services.AddSingleton(new Migrator());
+            services.AddSingleton<BackupService>();
+            services.AddSingleton<DataStore>();
 
             services.AddSingleton<MainViewModel>();
             services.AddSingleton<MainWindow>();

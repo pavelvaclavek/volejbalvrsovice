@@ -1,12 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Úložiště: složka Data, zámek instance, SQLite (SQLCipher), Dapper, migrace, repozitáře. -->
+  <!-- Úložiště: složka Data, zámek instance, SQLite (SQLCipher), Dapper, migrace, repozitáře,
+       správa klíčů. net48 kvůli PBKDF2 se SHA-256 (v netstandard2.0 není). -->
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- DataContractJsonSerializer pro keys.json – součást .NET Frameworku, žádný další balíček. -->
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\VolejbalVrsovice.Core\VolejbalVrsovice.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- SQL migrace: Migrations\NNN_Nazev.sql, číslo = PRAGMA user_version po aplikaci skriptu. -->
+    <EmbeddedResource Include="Migrations\*.sql" LogicalName="Migrations/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

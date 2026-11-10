@@ -18,6 +18,9 @@ namespace VolejbalVrsovice.Data.Storage
 
             BaseDirectory = Path.GetFullPath(baseDirectory);
             DataDirectory = Path.Combine(BaseDirectory, "Data");
+            DatabaseFile = Path.Combine(DataDirectory, "volejbal.db");
+            KeysFile = Path.Combine(DataDirectory, "keys.json");
+            BackupDirectory = Path.Combine(DataDirectory, "backup");
             LogsDirectory = Path.Combine(DataDirectory, "logs");
             LockFile = Path.Combine(DataDirectory, "volejbal.lock");
             LockInfoFile = Path.Combine(DataDirectory, "volejbal.lock.info");
@@ -28,6 +31,15 @@ namespace VolejbalVrsovice.Data.Storage
 
         /// <summary>Složka <c>Data</c> – vzniká při prvním spuštění, není součástí ZIPu.</summary>
         public string DataDirectory { get; }
+
+        /// <summary>Šifrovaná databáze <c>Data\volejbal.db</c>.</summary>
+        public string DatabaseFile { get; }
+
+        /// <summary>Úložiště klíčů <c>Data\keys.json</c> – patří k databázi, zálohují se vždy spolu.</summary>
+        public string KeysFile { get; }
+
+        /// <summary>Zálohy <c>Data\backup\yyyyMMdd_HHmmss</c>.</summary>
+        public string BackupDirectory { get; }
 
         /// <summary>Složka s protokoly <c>Data\logs</c>.</summary>
         public string LogsDirectory { get; }

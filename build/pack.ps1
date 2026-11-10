@@ -114,6 +114,12 @@ try {
         $fileCount++
     }
 
+    # Bez nativni knihovny SQLCipher by aplikace neotevrela databazi.
+    $nativeLibrary = Join-Path $stage 'runtimes\win-x64\native\e_sqlcipher.dll'
+    if (-not (Test-Path -LiteralPath $nativeLibrary)) {
+        throw 'Ve vystupu buildu chybi runtimes\win-x64\native\e_sqlcipher.dll.'
+    }
+
     $guide = Join-Path $repoRoot 'NAVOD.txt'
     if (Test-Path -LiteralPath $guide) {
         Copy-Item -LiteralPath $guide -Destination (Join-Path $stage 'NAVOD.txt')

@@ -8,7 +8,11 @@
        žádný další balíček nepřidávat bez zdůvodnění. Vše musí podporovat net48 / netstandard2.0. -->
   <ItemGroup>
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="Dapper" Version="2.1.89" />
+    <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <!-- SQLCipher (šifrovaná SQLite) místo běžného e_sqlite3. Poslední vydaná verze balíčku je 2.1.11. -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.11" />
     <PackageVersion Include="Serilog" Version="4.4.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>

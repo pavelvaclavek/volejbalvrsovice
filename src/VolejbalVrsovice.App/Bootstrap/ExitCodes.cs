@@ -8,5 +8,6 @@ namespace VolejbalVrsovice.App.Bootstrap
         public const int FrameworkMissing = 2;
         public const int DataFolderNotWritable = 3;
         public const int AlreadyRunning = 4;
+        public const int DataStoreInconsistent = 5;
     }
 }

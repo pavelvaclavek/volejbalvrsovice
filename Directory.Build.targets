@@ -1,0 +1,17 @@
+<Project>
+
+  <!--
+    Balíček SQLitePCLRaw.lib.e_sqlcipher kopíruje do výstupu nativní knihovny pro všechny platformy
+    (runtimes\win-x86, win-arm, …). Aplikace běží jen jako x64, takže do výstupu patří pouze
+    runtimes\win-x64\native\e_sqlcipher.dll (zadání, sekce 3) – ostatní se zahodí ještě před kopírováním.
+  -->
+  <Target Name="KeepOnlyWinX64NativeLibraries" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <_ForeignNativeLibrary Include="@(Content)"
+                             Condition="$([System.String]::Copy('%(Content.Link)').StartsWith('runtimes\'))
+                                        And !$([System.String]::Copy('%(Content.Link)').StartsWith('runtimes\win-x64\'))" />
+      <Content Remove="@(_ForeignNativeLibrary)" />
+    </ItemGroup>
+  </Target>
+
+</Project>
