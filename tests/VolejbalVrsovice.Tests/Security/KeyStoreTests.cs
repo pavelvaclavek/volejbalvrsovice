@@ -12,6 +12,9 @@ namespace VolejbalVrsovice.Tests.Security
     {
         private const int Iterations = 1000;
 
+        // Úložiště vazbu záznamu neřeší (jen ukládá) – v těchto testech stačí jedna pro všechny záznamy.
+        private static readonly KeyBinding Binding = KeyBinding.ForUser("test@example.cz");
+
         private readonly TempDirectory _temp = new TempDirectory();
         private readonly string _file;
         private readonly KeyStore _store;
@@ -58,7 +61,7 @@ namespace VolejbalVrsovice.Tests.Security
 
             var wrapped = _store.FindUser("admin@admin.cz");
 
-            Assert.True(KeyEnvelope.TryUnwrap(wrapped, "admin", out var key));
+            Assert.True(KeyEnvelope.TryUnwrap(wrapped, "admin", Binding, out var key));
             Assert.Equal(_key, key);
             Assert.Equal(_dbId, _store.GetDbId());
         }
@@ -114,9 +117,9 @@ namespace VolejbalVrsovice.Tests.Security
             _store.SetUser("Admin@admin.cz", Wrap("nove-heslo-1"));
 
             Assert.Equal(new[] { "admin@admin.cz", "trener@example.cz" }, _store.GetUserEmails());
-            Assert.False(KeyEnvelope.TryUnwrap(_store.FindUser("admin@admin.cz"), "admin", out _));
-            Assert.True(KeyEnvelope.TryUnwrap(_store.FindUser("admin@admin.cz"), "nove-heslo-1", out _));
-            Assert.True(KeyEnvelope.TryUnwrap(_store.FindUser("trener@example.cz"), "docasne-heslo", out _));
+            Assert.False(KeyEnvelope.TryUnwrap(_store.FindUser("admin@admin.cz"), "admin", Binding, out _));
+            Assert.True(KeyEnvelope.TryUnwrap(_store.FindUser("admin@admin.cz"), "nove-heslo-1", Binding, out _));
+            Assert.True(KeyEnvelope.TryUnwrap(_store.FindUser("trener@example.cz"), "docasne-heslo", Binding, out _));
         }
 
         [Fact]
@@ -141,8 +144,8 @@ namespace VolejbalVrsovice.Tests.Security
             _store.SetRecovery(Wrap("PRVNIKODPRVNIKODPRVNIKOD"));
             _store.SetRecovery(Wrap("DRUHYKODDRUHYKODDRUHYKOD"));
 
-            Assert.False(KeyEnvelope.TryUnwrap(_store.GetRecovery(), "PRVNIKODPRVNIKODPRVNIKOD", out _));
-            Assert.True(KeyEnvelope.TryUnwrap(_store.GetRecovery(), "DRUHYKODDRUHYKODDRUHYKOD", out var key));
+            Assert.False(KeyEnvelope.TryUnwrap(_store.GetRecovery(), "PRVNIKODPRVNIKODPRVNIKOD", Binding, out _));
+            Assert.True(KeyEnvelope.TryUnwrap(_store.GetRecovery(), "DRUHYKODDRUHYKODDRUHYKOD", Binding, out var key));
             Assert.Equal(_key, key);
             Assert.Contains("\"recovery\": {", File.ReadAllText(_file));
         }
@@ -182,6 +185,24 @@ namespace VolejbalVrsovice.Tests.Security
             Assert.Throws<KeyStoreCorruptedException>(() => _store.GetDbId());
         }
 
+        /// <summary>
+        /// Dva záznamy pro jeden e-mail aplikace nikdy nezapíše; kdyby vznikly ručním zásahem
+        /// (např. vložením starého záznamu ze zálohy), soubor se odmítne celý.
+        /// </summary>
+        [Fact]
+        public void Duplicate_user_records_are_rejected()
+        {
+            _store.Create(_dbId, "admin@admin.cz", Wrap("admin"));
+            var json = File.ReadAllText(_file);
+            var start = json.IndexOf("    {", StringComparison.Ordinal);
+            var end = json.IndexOf("    }", StringComparison.Ordinal) + "    }".Length;
+            var record = json.Substring(start, end - start);
+            var duplicated = json.Insert(end, ",\n" + record.Replace("admin@admin.cz", "ADMIN@admin.cz"));
+            File.WriteAllText(_file, duplicated);
+
+            Assert.Throws<KeyStoreCorruptedException>(() => _store.FindUser("admin@admin.cz"));
+        }
+
         [Fact]
         public void Corrupted_file_is_never_modified()
         {
@@ -194,7 +215,7 @@ namespace VolejbalVrsovice.Tests.Security
 
         private WrappedKey Wrap(string secret)
         {
-            return KeyEnvelope.Wrap(_key, secret, Iterations);
+            return KeyEnvelope.Wrap(_key, secret, Iterations, Binding);
         }
     }
 }

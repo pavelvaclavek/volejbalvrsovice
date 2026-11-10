@@ -84,7 +84,7 @@ namespace VolejbalVrsovice.Tests.Db
 
                 Assert.Equal(600000, wrapped.Iterations);
                 Assert.Contains("\"iterations\": 600000", File.ReadAllText(store.Paths.KeysFile));
-                Assert.True(KeyEnvelope.TryUnwrap(wrapped, "admin", out var key));
+                Assert.True(KeyEnvelope.TryUnwrap(wrapped, "admin", KeyBinding.ForUser(DefaultAdmin.Email), out var key));
                 store.Connections.Open(key).Dispose();
             }
         }
@@ -272,6 +272,43 @@ namespace VolejbalVrsovice.Tests.Db
 
                 store.Unlock();
                 store.DataStore.Prepare(store.Key);
+            }
+        }
+
+        /// <summary>
+        /// Proces skončil mezi posledními dvěma kroky prvního spuštění: soubor klíčů už existuje,
+        /// hotová databáze je ještě pod dočasným jménem. Příští start to má dotáhnout, ne odmítnout.
+        /// </summary>
+        [Fact]
+        public async Task First_run_interrupted_before_the_final_rename_is_completed_on_the_next_start()
+        {
+            using (var store = new TestStore())
+            {
+                store.DataStore.CreateNew();
+                File.Move(store.Paths.DatabaseFile, store.Paths.DatabaseFile + ".new");   // stav těsně před přejmenováním
+
+                Assert.Equal(DataStoreState.Ready, store.DataStore.Inspect());
+
+                Assert.True(File.Exists(store.Paths.DatabaseFile));
+                Assert.False(File.Exists(store.Paths.DatabaseFile + ".new"));
+                store.Unlock();
+                store.DataStore.Prepare(store.Key);
+                Assert.NotNull(await store.Users.GetByEmailAsync(DefaultAdmin.Email));
+            }
+        }
+
+        [Fact]
+        public void Leftover_temporary_database_never_replaces_an_existing_one()
+        {
+            using (var store = TestStore.CreateUnlocked())
+            {
+                var databaseBefore = File.ReadAllBytes(store.Paths.DatabaseFile);
+                File.WriteAllText(store.Paths.DatabaseFile + ".new", "cizí soubor");
+
+                Assert.Equal(DataStoreState.Ready, store.DataStore.Inspect());
+
+                Assert.Equal(databaseBefore, File.ReadAllBytes(store.Paths.DatabaseFile));
+                Assert.True(File.Exists(store.Paths.DatabaseFile + ".new"));
             }
         }
 

@@ -132,7 +132,7 @@ namespace VolejbalVrsovice.Tests.TestSupport
         /// <summary>Odemkne klíč databáze heslem výchozího správce (admin / admin).</summary>
         public byte[] Unlock(string password = DefaultAdmin.Password)
         {
-            if (!KeyEnvelope.TryUnwrap(KeyStore.FindUser(DefaultAdmin.Email), password, out var key))
+            if (!KeyEnvelope.TryUnwrap(KeyStore.FindUser(DefaultAdmin.Email), password, KeyBinding.ForUser(DefaultAdmin.Email), out var key))
             {
                 throw new InvalidOperationException("Výchozí správce se nepodařilo odemknout.");
             }

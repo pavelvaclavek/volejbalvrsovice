@@ -8,6 +8,8 @@ namespace VolejbalVrsovice.Tests.Bootstrap
 {
     public class BootstrapTests
     {
+        private const char NonBreakingSpace = (char)0x00A0;
+
         [Theory]
         [InlineData(528040, true)]   // .NET Framework 4.8
         [InlineData(533320, true)]   // 4.8.1
@@ -57,7 +59,7 @@ namespace VolejbalVrsovice.Tests.Bootstrap
             var culture = UiCulture.Create();
 
             // Oddělovač tisíců je nedělitelná mezera (U+00A0), před „Kč“ je mezera obyčejná.
-            Assert.Equal("1 250,00 Kč", 1250m.ToString("C", culture));
+            Assert.Equal("1" + NonBreakingSpace + "250,00 Kč", 1250m.ToString("C", culture));
             Assert.Equal("-300,00 Kč", (-300m).ToString("C", culture));
             Assert.Equal("5. 3. 2026", new DateTime(2026, 3, 5).ToString("d", culture));
         }

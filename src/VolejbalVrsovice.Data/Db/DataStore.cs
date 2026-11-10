@@ -62,8 +62,16 @@ namespace VolejbalVrsovice.Data.Db
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        /// <summary>Databáze během prvního vytváření – než je hotová i se souborem klíčů.</summary>
+        private string TemporaryDatabaseFile
+        {
+            get { return _paths.DatabaseFile + ".new"; }
+        }
+
         public DataStoreState Inspect()
         {
+            CompleteInterruptedFirstRun();
+
             var hasDatabase = File.Exists(_paths.DatabaseFile);
             var hasKeys = _keyStore.Exists;
 
@@ -90,11 +98,14 @@ namespace VolejbalVrsovice.Data.Db
 
             Directory.CreateDirectory(_paths.DataDirectory);
 
-            // Databáze vzniká pod dočasným jménem: když start spadne uprostřed, příště se začne znovu
-            // a nezůstane „databáze bez klíčů“, kterou by aplikace odmítla.
-            var temporaryFile = _paths.DatabaseFile + ".new";
+            // Databáze vzniká pod dočasným jménem. Ať proces skončí v kterémkoli okamžiku (uživatel zavře
+            // okno během přípravy, výpadek proudu), příští start to umí dotáhnout nebo začít znovu:
+            //   jen volejbal.db.new               → první spuštění se zopakuje (soubor se zahodí),
+            //   keys.json + volejbal.db.new       → chybí už jen přejmenování, viz CompleteInterruptedFirstRun.
+            var temporaryFile = TemporaryDatabaseFile;
             DeleteIfExists(temporaryFile);
             DeleteIfExists(temporaryFile + "-journal");
+            DeleteIfExists(_keyStore.FilePath + ".tmp");
 
             var key = KeyEnvelope.GenerateKey();
             try
@@ -108,25 +119,32 @@ namespace VolejbalVrsovice.Data.Db
                     Seed(connection, dbId, now);
                 }
 
-                var wrapped = KeyEnvelope.Wrap(key, DefaultAdmin.Password, _kdf.Iterations);
+                var wrapped = KeyEnvelope.Wrap(
+                    key, DefaultAdmin.Password, _kdf.Iterations, KeyBinding.ForUser(DefaultAdmin.Email));
 
+                // Pořadí: 1) soubor klíčů (databáze je v tu chvíli už celá a zavřená), 2) přejmenování databáze.
+                _keyStore.Create(dbId, DefaultAdmin.Email, wrapped);
                 File.Move(temporaryFile, _paths.DatabaseFile);
-                try
-                {
-                    _keyStore.Create(dbId, DefaultAdmin.Email, wrapped);
-                }
-                catch
-                {
-                    // Bez souboru klíčů je čerstvá (prázdná) databáze k ničemu – nenechávat ji na disku.
-                    DeleteIfExists(_paths.DatabaseFile);
-                    throw;
-                }
 
                 _logger.Information("Vytvořena nová databáze (schéma verze {Version})", _migrator.LatestVersion);
             }
             finally
             {
                 KeyEnvelope.Clear(key);
+            }
+        }
+
+        /// <summary>
+        /// Dotáhne první spuštění přerušené mezi posledními dvěma kroky: soubor klíčů už existuje,
+        /// hotová databáze ještě čeká pod dočasným jménem. Soubor klíčů vzniká až po dokončení
+        /// a zavření databáze, takže ji stačí přejmenovat – nic se tím nepřepisuje.
+        /// </summary>
+        private void CompleteInterruptedFirstRun()
+        {
+            if (_keyStore.Exists && !File.Exists(_paths.DatabaseFile) && File.Exists(TemporaryDatabaseFile))
+            {
+                File.Move(TemporaryDatabaseFile, _paths.DatabaseFile);
+                _logger.Information("Dokončeno první spuštění přerušené před přejmenováním databáze");
             }
         }
 

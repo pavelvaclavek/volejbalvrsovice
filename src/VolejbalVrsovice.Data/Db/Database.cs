@@ -1,6 +1,8 @@
 using System;
 using System.Data;
 using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
+using VolejbalVrsovice.Data.Security;
 
 namespace VolejbalVrsovice.Data.Db
 {
@@ -8,7 +10,8 @@ namespace VolejbalVrsovice.Data.Db
     public interface IDatabaseKeySource
     {
         /// <summary>
-        /// Vrátí klíč databáze (živé pole, ne kopii – volající ho nemění ani neuchovává).
+        /// Vrátí KOPII klíče databáze. Volající ji hned po použití přepíše nulami
+        /// (<c>KeyEnvelope.Clear</c>) a nikam ji neukládá.
         /// Vyhodí <see cref="InvalidOperationException"/>, pokud databáze není odemčená.
         /// </summary>
         byte[] GetKey();
@@ -47,7 +50,7 @@ namespace VolejbalVrsovice.Data.Db
 
             return Task.Run(async () =>
             {
-                using (var connection = _connections.Open(_keySource.GetKey()))
+                using (var connection = OpenConnection())
                 {
                     return await query(connection).ConfigureAwait(false);
                 }
@@ -60,7 +63,7 @@ namespace VolejbalVrsovice.Data.Db
 
             return Task.Run(async () =>
             {
-                using (var connection = _connections.Open(_keySource.GetKey()))
+                using (var connection = OpenConnection())
                 using (var transaction = connection.BeginTransaction())
                 {
                     var result = await command(connection, transaction).ConfigureAwait(false);
@@ -79,6 +82,20 @@ namespace VolejbalVrsovice.Data.Db
                 await command(connection, transaction).ConfigureAwait(false);
                 return null;
             });
+        }
+
+        private SqliteConnection OpenConnection()
+        {
+            // Klíč je jen kopie pro tuto jednu operaci – po otevření spojení ji smazat.
+            var key = _keySource.GetKey();
+            try
+            {
+                return _connections.Open(key);
+            }
+            finally
+            {
+                KeyEnvelope.Clear(key);
+            }
         }
     }
 }

@@ -49,9 +49,10 @@ namespace VolejbalVrsovice.Tests.TestSupport
             _key = key;
         }
 
+        // Stejně jako relace vrací kopii – volající ji po použití maže.
         public byte[] GetKey()
         {
-            return _key;
+            return (byte[])_key.Clone();
         }
     }
 }

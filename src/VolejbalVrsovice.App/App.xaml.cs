@@ -10,12 +10,8 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using VolejbalVrsovice.App.Bootstrap;
-using VolejbalVrsovice.App.ViewModels;
-using VolejbalVrsovice.App.Views;
 using VolejbalVrsovice.Core.Errors;
-using VolejbalVrsovice.Core.Services;
 using VolejbalVrsovice.Data.Db;
-using VolejbalVrsovice.Data.Security;
 using VolejbalVrsovice.Data.Storage;
 
 namespace VolejbalVrsovice.App
@@ -39,22 +35,6 @@ namespace VolejbalVrsovice.App
             StartApplicationSafely();
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private void StartApplicationSafely()
-        {
-            try
-            {
-                StartApplication();
-            }
-            catch (Exception ex)
-            {
-                // Bez hlavního okna by proces zůstal viset – proto vždy ukončit.
-                Log.Fatal(ex, "Start aplikace selhal");
-                ShowError(StartupMessages.StartFailed(ex.Message));
-                Shutdown(ExitCodes.UnexpectedError);
-            }
-        }
-
         protected override void OnExit(ExitEventArgs e)
         {
             if (_services != null)
@@ -74,6 +54,22 @@ namespace VolejbalVrsovice.App
             }
 
             base.OnExit(e);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void StartApplicationSafely()
+        {
+            try
+            {
+                StartApplication();
+            }
+            catch (Exception ex)
+            {
+                // Bez okna by proces zůstal viset – proto vždy ukončit.
+                Log.Fatal(ex, "Start aplikace selhal");
+                ShowError(StartupMessages.StartFailed(ex.Message));
+                Shutdown(ExitCodes.UnexpectedError);
+            }
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -108,51 +104,20 @@ namespace VolejbalVrsovice.App
             Log.Logger = LoggingSetup.CreateLogger(paths.LogsDirectory);
             Log.Information("Aplikace spuštěna, verze {Version}", GetVersion());
 
-            _services = ConfigureServices(paths);
+            _services = ServiceRegistration.BuildServiceProvider(paths, Log.Logger);
 
             // 4) Úložiště dat – rozhodovací tabulka při startu (zadání, sekce 5a).
-            var dataStore = _services.GetRequiredService<DataStore>();
-            switch (dataStore.Inspect())
+            if (_services.GetRequiredService<DataStore>().Inspect() == DataStoreState.Inconsistent)
             {
-                case DataStoreState.Inconsistent:
-                    // Existuje jen databáze, nebo jen soubor klíčů: nic nevytvářet ani nepřepisovat.
-                    Log.Error("Úložiště dat je neúplné – chybí databáze nebo soubor klíčů");
-                    ShowError(DataStoreMismatchException.UserMessage);
-                    Shutdown(ExitCodes.DataStoreInconsistent);
-                    return;
-
-                case DataStoreState.FirstRun:
-                    dataStore.CreateNew();
-                    break;
+                // Existuje jen databáze, nebo jen soubor klíčů: nic nevytvářet ani nepřepisovat.
+                Log.Error("Úložiště dat je neúplné – chybí databáze nebo soubor klíčů");
+                ShowError(DataStoreMismatchException.UserMessage);
+                Shutdown(ExitCodes.DataStoreInconsistent);
+                return;
             }
 
-            var window = _services.GetRequiredService<MainWindow>();
-            window.Closed += (sender, args) => Shutdown(ExitCodes.Ok);
-            MainWindow = window;
-            window.Show();
-        }
-
-        private static ServiceProvider ConfigureServices(AppPaths paths)
-        {
-            var services = new ServiceCollection();
-
-            services.AddSingleton(paths);
-            services.AddSingleton(Log.Logger);
-            services.AddSingleton<IClock, SystemClock>();
-
-            // Úložiště dat: šifrovaná databáze + soubor klíčů.
-            services.AddSingleton(KdfSettings.Default);
-            services.AddSingleton(new KeyStore(paths.KeysFile));
-            services.AddSingleton(new SqliteConnectionFactory(paths.DatabaseFile));
-            // Instanci vytvořit ručně: kontejner by jinak zvolil konstruktor s (prázdným) seznamem migrací.
-            services.AddSingleton(new Migrator());
-            services.AddSingleton<BackupService>();
-            services.AddSingleton<DataStore>();
-
-            services.AddSingleton<MainViewModel>();
-            services.AddSingleton<MainWindow>();
-
-            return services.BuildServiceProvider();
+            // 5) Přihlášení. První spuštění (vytvoření databáze) proběhne už za zobrazeným oknem.
+            _services.GetRequiredService<AppController>().Start();
         }
 
         private static string GetVersion()

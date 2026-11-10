@@ -236,11 +236,19 @@ namespace VolejbalVrsovice.Data.Security
                 throw new KeyStoreCorruptedException("Chybí seznam uživatelů.");
             }
 
+            var emails = new HashSet<string>(StringComparer.Ordinal);
             foreach (var user in document.Users)
             {
                 if (user == null || string.IsNullOrWhiteSpace(user.Email))
                 {
                     throw new KeyStoreCorruptedException("Záznam uživatele bez e-mailu.");
+                }
+
+                // Aplikace nikdy dva záznamy pro jeden e-mail nezapíše. Kdyby tam byly (ruční zásah),
+                // nebylo by jasné, který platí – třeba jestli ten se starým heslem.
+                if (!emails.Add(EmailAddress.Normalize(user.Email)))
+                {
+                    throw new KeyStoreCorruptedException("Více záznamů pro stejného uživatele.");
                 }
 
                 user.ToWrappedKey();
