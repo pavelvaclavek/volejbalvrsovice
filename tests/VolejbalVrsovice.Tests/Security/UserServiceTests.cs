@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VolejbalVrsovice.Core.Entities;
@@ -218,6 +219,23 @@ namespace VolejbalVrsovice.Tests.Security
             var login = await _fixture.Auth.LoginAsync("trener@example.cz", "Docasne-heslo-1");
             Assert.Equal(LoginStatus.InvalidCredentials, login.Status);
             Assert.False(_fixture.Session.IsAuthenticated);
+        }
+
+        /// <summary>
+        /// Deaktivovaný uživatel své heslo zná dál. Kdyby vedle <c>keys.json</c> zůstala jeho předchozí verze,
+        /// rozbalil by z ní klíč databáze i po deaktivaci.
+        /// </summary>
+        [Fact]
+        public async Task Deactivation_leaves_no_copy_of_the_users_key_record_next_to_the_key_store()
+        {
+            await _fixture.SetUpAdminAsync();
+            var user = await _fixture.CreateUserAsync("trener@example.cz", "Docasne-heslo-1");
+
+            Assert.True((await _fixture.Users.DeactivateAsync(user.Id)).Succeeded);
+
+            var keyFiles = Directory.GetFiles(_fixture.Store.Paths.DataDirectory, "keys.json*").Select(Path.GetFileName);
+            Assert.Equal(new[] { "keys.json" }, keyFiles);
+            Assert.DoesNotContain("trener@example.cz", File.ReadAllText(_fixture.Store.Paths.KeysFile));
         }
 
         [Fact]

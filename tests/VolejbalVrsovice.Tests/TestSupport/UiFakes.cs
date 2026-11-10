@@ -199,6 +199,12 @@ namespace VolejbalVrsovice.Tests.TestSupport
 
         public bool ConfirmAnswer { get; set; } = true;
 
+        /// <summary>
+        /// Odpověď podle otázky (dotaz je v tu chvíli už v <see cref="Questions"/>); bez nastavení platí
+        /// <see cref="ConfirmAnswer"/>.
+        /// </summary>
+        public Func<string, bool> OnConfirm { get; set; }
+
         /// <summary>Co má „uživatel“ v dialogu udělat; návratová hodnota = potvrzeno / zrušeno.</summary>
         public Func<DialogViewModel, bool> OnDialog { get; set; } = dialog => true;
 
@@ -220,7 +226,7 @@ namespace VolejbalVrsovice.Tests.TestSupport
         public bool Confirm(string message)
         {
             Questions.Add(message);
-            return ConfirmAnswer;
+            return OnConfirm == null ? ConfirmAnswer : OnConfirm(message);
         }
 
         public bool ShowDialog(DialogViewModel viewModel)

@@ -72,7 +72,7 @@ namespace VolejbalVrsovice.Tests.Security
             _store.Create(_dbId, "admin@admin.cz", Wrap("Tajné-heslo-123"));
             _store.SetRecovery(Wrap("ABCDEFGHJKLMNPQRSTUVWXYZ"));
 
-            var json = File.ReadAllText(_file);
+            var json = ReadJson();
 
             Assert.DoesNotContain(Convert.ToBase64String(_key), json);
             Assert.DoesNotContain(BitConverter.ToString(_key).Replace("-", string.Empty), json, StringComparison.OrdinalIgnoreCase);
@@ -151,16 +151,70 @@ namespace VolejbalVrsovice.Tests.Security
         }
 
         [Fact]
-        public void Update_is_atomic_and_keeps_the_previous_version_as_backup()
+        public void Update_replaces_the_file_and_leaves_no_other_file_behind()
         {
             _store.Create(_dbId, "admin@admin.cz", Wrap("admin"));
             var original = File.ReadAllBytes(_file);
 
             _store.SetUser("trener@example.cz", Wrap("docasne-heslo"));
 
-            Assert.Equal(original, File.ReadAllBytes(_file + ".bak"));
-            Assert.False(File.Exists(_file + ".tmp"));
             Assert.NotEqual(original, File.ReadAllBytes(_file));
+            Assert.Equal(new[] { "keys.json" }, FilesInFolder());   // žádné keys.json.tmp ani keys.json.bak
+        }
+
+        /// <summary>
+        /// Po změně hesla, deaktivaci i novém záchranném kódu nesmí ve složce zůstat předchozí záznam:
+        /// kdo zná staré heslo nebo starý kód, by jím klíč databáze rozbalil ze zálohy i potom,
+        /// co přestaly platit.
+        /// </summary>
+        [Fact]
+        public void Superseded_records_do_not_survive_anywhere_in_the_folder()
+        {
+            _store.Create(_dbId, "admin@admin.cz", Wrap("stare-heslo"));
+            _store.SetUser("trener@example.cz", Wrap("heslo-trenera"));
+            _store.SetRecovery(Wrap("PRVNIKODPRVNIKODPRVNIKOD"));
+
+            var superseded = new[] { _store.FindUser("admin@admin.cz"), _store.FindUser("trener@example.cz"), _store.GetRecovery() }
+                .Select(record => Convert.ToBase64String(record.CipherText))
+                .ToArray();
+            Assert.All(superseded, wrappedKey => Assert.Contains(wrappedKey, ReadJson()));
+
+            _store.SetUser("admin@admin.cz", Wrap("nove-heslo-1"));     // změna hesla
+            _store.RemoveUser("trener@example.cz");                     // deaktivace
+            _store.SetRecovery(Wrap("DRUHYKODDRUHYKODDRUHYKOD"));       // nový záchranný kód
+
+            Assert.Equal(new[] { "keys.json" }, FilesInFolder());
+            var json = ReadJson();
+            Assert.All(superseded, wrappedKey => Assert.DoesNotContain(wrappedKey, json));
+            Assert.DoesNotContain("trener@example.cz", json);
+        }
+
+        [Fact]
+        public void Backup_left_behind_earlier_is_removed_by_the_next_write()
+        {
+            _store.Create(_dbId, "admin@admin.cz", Wrap("admin"));
+            File.WriteAllText(_file + ".bak", "záloha po starší verzi aplikace");
+
+            _store.SetRecovery(Wrap("PRVNIKODPRVNIKODPRVNIKOD"));
+
+            Assert.Equal(new[] { "keys.json" }, FilesInFolder());
+        }
+
+        [Fact]
+        public void Failed_write_keeps_the_current_file_and_creates_no_backup()
+        {
+            _store.Create(_dbId, "admin@admin.cz", Wrap("admin"));
+            var original = File.ReadAllBytes(_file);
+
+            // Soubor drží jiný program a nedovolí ho nahradit.
+            using (new FileStream(_file, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                Assert.ThrowsAny<IOException>(() => _store.SetUser("trener@example.cz", Wrap("docasne-heslo")));
+            }
+
+            Assert.Equal(original, File.ReadAllBytes(_file));
+            Assert.False(File.Exists(_file + ".bak"));
+            Assert.Null(_store.FindUser("trener@example.cz"));
         }
 
         [Fact]
@@ -216,6 +270,20 @@ namespace VolejbalVrsovice.Tests.Security
         private WrappedKey Wrap(string secret)
         {
             return KeyEnvelope.Wrap(_key, secret, Iterations, Binding);
+        }
+
+        /// <summary>
+        /// Obsah souboru s lomítky bez zpětného lomítka: serializátor zapisuje „/“ jako „\/“, takže by se
+        /// hodnota v Base64 při hledání v surovém textu nemusela najít, i kdyby v souboru byla.
+        /// </summary>
+        private string ReadJson()
+        {
+            return File.ReadAllText(_file).Replace("\\/", "/");
+        }
+
+        private string[] FilesInFolder()
+        {
+            return Directory.GetFiles(_temp.Path).Select(Path.GetFileName).OrderBy(name => name, StringComparer.Ordinal).ToArray();
         }
     }
 }

@@ -213,6 +213,7 @@ namespace VolejbalVrsovice.App.ViewModels
             }
 
             var isSelf = row.User.Id == _session.UserId;
+            var wasAdmin = row.User.IsAdmin;
             var question = isSelf
                 ? "Opravdu chcete deaktivovat svůj vlastní účet?\n\nBudete odhlášeni a už se nepřihlásíte."
                 : "Opravdu chcete deaktivovat uživatele " + row.DisplayName + " (" + row.Email + ")?\n\nUž se nepřihlásí.";
@@ -247,6 +248,17 @@ namespace VolejbalVrsovice.App.ViewModels
             }
 
             await LoadAsync();
+
+            // Deaktivací končí jen přihlášení heslem. Záchranný kód je společný pro všechny správce a platí
+            // dál – kdo ho zná, nastaví s ním heslo kterémukoli z nich. Proto se hned nabídne nový.
+            if (wasAdmin && _dialogs.Confirm(
+                "Účet správce " + row.DisplayName + " je deaktivovaný.\n\n"
+                + "Záchranný kód ale platí dál – kdo ho zná, může s ním nastavit nové heslo kterémukoli správci. "
+                + "Pokud ho deaktivovaný správce mohl znát, vygenerujte nový.\n\n"
+                + "Vygenerovat teď nový záchranný kód? Dosavadní kód tím přestane platit."))
+            {
+                await GenerateAndShowRecoveryCodeAsync();
+            }
         }
 
         private async Task NewRecoveryCodeAsync()
@@ -257,6 +269,11 @@ namespace VolejbalVrsovice.App.ViewModels
                 return;
             }
 
+            await GenerateAndShowRecoveryCodeAsync();
+        }
+
+        private async Task GenerateAndShowRecoveryCodeAsync()
+        {
             string code;
 
             IsBusy = true;

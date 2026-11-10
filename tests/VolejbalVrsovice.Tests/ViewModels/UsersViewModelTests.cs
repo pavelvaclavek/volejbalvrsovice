@@ -130,6 +130,77 @@ namespace VolejbalVrsovice.Tests.ViewModels
             Assert.Equal("Deaktivovaný", viewModel.Users[1].StateText);
             Assert.Equal(2, viewModel.SelectedUser.User.Id);              // výběr zůstal na stejném uživateli
             Assert.False(viewModel.DeactivateCommand.CanExecute(null));   // podruhé už to nejde
+
+            // Běžný uživatel záchranný kód nikdy neviděl – nový se po jeho deaktivaci nenabízí.
+            Assert.Single(_dialogs.Questions);
+            Assert.Empty(_dialogs.Dialogs);
+        }
+
+        /// <summary>
+        /// Záchranný kód je společný pro všechny správce a deaktivací účtu neztrácí platnost –
+        /// deaktivovaný správce, který ho zná, by s ním nastavil heslo jinému správci.
+        /// </summary>
+        [Fact]
+        public async Task Deactivating_another_admin_offers_a_new_recovery_code()
+        {
+            _users.Users.Add(new AppUser { Id = 3, Email = "druhy@example.cz", DisplayName = "Druhý správce", Role = UserRole.Admin, IsActive = true });
+            var viewModel = await CreateLoadedAsync();
+            viewModel.SelectedUser = viewModel.Users[2];
+
+            string stateWhenOffered = null;
+            _dialogs.OnConfirm = question =>
+            {
+                if (_dialogs.Questions.Count == 2)
+                {
+                    stateWhenOffered = viewModel.Users[2].StateText;
+                }
+
+                return true;
+            };
+
+            await viewModel.DeactivateCommand.ExecuteAsync(null);
+
+            Assert.Equal(new[] { "Deactivate:3", "GenerateRecoveryCode" }, _users.Calls);
+            Assert.Equal(2, _dialogs.Questions.Count);
+            Assert.StartsWith("Účet správce Druhý správce je deaktivovaný.", _dialogs.Questions[1]);
+            Assert.EndsWith("Vygenerovat teď nový záchranný kód? Dosavadní kód tím přestane platit.", _dialogs.Questions[1]);
+            Assert.Equal("Deaktivovaný", stateWhenOffered);   // seznam se obnovil ještě před nabídkou
+
+            var shown = Assert.IsType<RecoveryCodeViewModel>(Assert.Single(_dialogs.Dialogs));
+            Assert.Equal("ABCD-EFGH-JKLM-NPQR-STUV-WXYZ", shown.Code);
+            Assert.False(viewModel.IsBusy);
+        }
+
+        [Fact]
+        public async Task Declining_the_offer_keeps_the_current_recovery_code()
+        {
+            _users.Users.Add(new AppUser { Id = 3, Email = "druhy@example.cz", DisplayName = "Druhý správce", Role = UserRole.Admin, IsActive = true });
+            var viewModel = await CreateLoadedAsync();
+            viewModel.SelectedUser = viewModel.Users[2];
+            _dialogs.OnConfirm = question => _dialogs.Questions.Count == 1;   // deaktivovat ano, nový kód ne
+
+            await viewModel.DeactivateCommand.ExecuteAsync(null);
+
+            Assert.Equal(new[] { "Deactivate:3" }, _users.Calls);
+            Assert.Equal(2, _dialogs.Questions.Count);
+            Assert.Empty(_dialogs.Dialogs);
+            Assert.Equal("Deaktivovaný", viewModel.Users[2].StateText);
+        }
+
+        [Fact]
+        public async Task Refused_deactivation_of_an_admin_does_not_offer_a_new_recovery_code()
+        {
+            _users.Users.Add(new AppUser { Id = 3, Email = "druhy@example.cz", DisplayName = "Druhý správce", Role = UserRole.Admin, IsActive = true });
+            _users.DeactivateResult = OperationResult.Failure("Uživatel neexistuje.");
+            var viewModel = await CreateLoadedAsync();
+            viewModel.SelectedUser = viewModel.Users[2];
+
+            await viewModel.DeactivateCommand.ExecuteAsync(null);
+
+            Assert.Equal("Uživatel neexistuje.", Assert.Single(_dialogs.Warnings));
+            Assert.Single(_dialogs.Questions);
+            Assert.Equal(new[] { "Deactivate:3" }, _users.Calls);
+            Assert.Empty(_dialogs.Dialogs);
         }
 
         [Fact]
@@ -158,6 +229,10 @@ namespace VolejbalVrsovice.Tests.ViewModels
 
             Assert.StartsWith("Opravdu chcete deaktivovat svůj vlastní účet?", Assert.Single(_dialogs.Questions));
             Assert.True(selfDeactivated);
+
+            // Nový záchranný kód se tu nenabízí: odcházející správce by ho viděl a relace hned končí.
+            Assert.Equal(new[] { "Deactivate:1" }, _users.Calls);
+            Assert.Empty(_dialogs.Dialogs);
         }
 
         [Fact]

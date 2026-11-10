@@ -150,7 +150,6 @@ namespace VolejbalVrsovice.Tests.Db
                 var removed = keepDatabase ? store.Paths.KeysFile : store.Paths.DatabaseFile;
                 var kept = keepDatabase ? store.Paths.DatabaseFile : store.Paths.KeysFile;
                 File.Delete(removed);
-                File.Delete(store.Paths.KeysFile + ".bak");
                 var before = File.ReadAllBytes(kept);
                 var filesBefore = ListDataFiles(store);
 

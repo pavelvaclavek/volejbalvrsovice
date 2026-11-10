@@ -25,7 +25,7 @@ namespace VolejbalVrsovice.App.Bootstrap
             services.AddSingleton(logger);
             services.AddSingleton<IClock, SystemClock>();
 
-            AddDataStore(services, paths);
+            AddDataStore(services, paths, logger);
             AddSecurity(services);
             AddRepositories(services);
             AddUserInterface(services);
@@ -34,10 +34,10 @@ namespace VolejbalVrsovice.App.Bootstrap
         }
 
         // Úložiště dat: šifrovaná databáze + soubor klíčů.
-        private static void AddDataStore(IServiceCollection services, AppPaths paths)
+        private static void AddDataStore(IServiceCollection services, AppPaths paths, ILogger logger)
         {
             services.AddSingleton(KdfSettings.Default);
-            services.AddSingleton(new KeyStore(paths.KeysFile));
+            services.AddSingleton(new KeyStore(paths.KeysFile, logger));
             services.AddSingleton(new SqliteConnectionFactory(paths.DatabaseFile));
 
             // Instanci vytvořit ručně: kontejner by jinak zvolil konstruktor s (prázdným) seznamem migrací.

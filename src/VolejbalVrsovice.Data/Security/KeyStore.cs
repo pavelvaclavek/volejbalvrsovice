@@ -5,7 +5,10 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.Text;
+using System.Threading;
 using System.Xml;
+using Serilog;
+using Serilog.Core;
 using VolejbalVrsovice.Core;
 using VolejbalVrsovice.Core.Errors;
 
@@ -15,23 +18,38 @@ namespace VolejbalVrsovice.Data.Security
     /// Úložiště klíčů <c>Data\keys.json</c> – nešifrovaný soubor vedle databáze (musí být mimo ni,
     /// jinak by nešla odemknout). Obsahuje jen e-maily uživatelů aplikace a klíč databáze zašifrovaný
     /// heslem každého z nich, případně záchranným kódem. Nic dalšího sem nepatří.
+    /// <para>
     /// Zápis je atomický: <c>keys.json.tmp</c> → <c>File.Replace</c> se zálohou <c>keys.json.bak</c>.
+    /// Záloha slouží jen po dobu výměny (kdyby výměna selhala v půli, zůstane v ní předchozí verze)
+    /// a po úspěšném zápisu se hned maže – jinak by v ní dál ležely záznamy, které už platit nemají.
+    /// </para>
     /// </summary>
     public sealed class KeyStore
     {
         public const int FormatVersion = 1;
+
+        // Soubor, který se právě přejmenoval, může na okamžik držet jiný program (antivirus, synchronizace).
+        private const int BackupDeleteAttempts = 3;
+        private const int BackupDeleteRetryDelayMs = 50;
 
         private static readonly DataContractJsonSerializer Serializer =
             new DataContractJsonSerializer(typeof(KeyStoreDocument));
 
         private readonly object _gate = new object();
         private readonly string _file;
+        private readonly ILogger _logger;
 
         public KeyStore(string file)
+            : this(file, Logger.None)
+        {
+        }
+
+        public KeyStore(string file, ILogger logger)
         {
             if (string.IsNullOrWhiteSpace(file)) throw new ArgumentException("Cesta k souboru klíčů musí být zadána.", nameof(file));
 
             _file = file;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public string FilePath
@@ -276,13 +294,45 @@ namespace VolejbalVrsovice.Data.Security
                 stream.Flush(flushToDisk: true);
             }
 
-            if (replaceExisting)
-            {
-                File.Replace(temp, _file, _file + ".bak");
-            }
-            else
+            if (!replaceExisting)
             {
                 File.Move(temp, _file);
+                return;
+            }
+
+            var backup = _file + ".bak";
+            File.Replace(temp, _file, backup);
+            DeleteBackup(backup);
+        }
+
+        /// <summary>
+        /// Smaže zálohu po úspěšné výměně souboru. Zůstal by v ní předchozí stav: klíč zabalený starým
+        /// heslem, záznam právě deaktivovaného uživatele nebo dosavadní záchranný kód – kdo takové heslo
+        /// či kód zná, by jím klíč databáze rozbalil i potom, co přestaly platit.
+        /// <para>
+        /// Nový soubor je v tu chvíli už zapsaný, takže nezdařený úklid nesmí zápis změnit v chybu:
+        /// jen se zaznamená a zálohu přepíše a smaže příští zápis.
+        /// </para>
+        /// </summary>
+        private void DeleteBackup(string backup)
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    File.Delete(backup);
+                    return;
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    if (attempt >= BackupDeleteAttempts)
+                    {
+                        _logger.Warning(ex, "Předchozí verzi souboru klíčů (keys.json.bak) se nepodařilo smazat – smaže ji příští zápis");
+                        return;
+                    }
+                }
+
+                Thread.Sleep(BackupDeleteRetryDelayMs);
             }
         }
     }
