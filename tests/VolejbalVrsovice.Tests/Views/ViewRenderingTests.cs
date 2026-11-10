@@ -129,6 +129,7 @@ namespace VolejbalVrsovice.Tests.Views
 
             var viewModel = new MainViewModel(session, _auth, _dialogs,
                 () => new UsersViewModel(users, session, _dialogs, new FakeClipboard(), new FakePrinter()));
+            viewModel.SelectedMenuItem = viewModel.MenuItems.Single(item => item.Title == MainViewModel.UsersMenu);
             var page = Assert.IsType<UsersViewModel>(viewModel.CurrentPage);
             page.SelectedUser = page.Users.Single(row => row.Email == "trener@example.cz");
 

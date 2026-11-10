@@ -34,20 +34,6 @@ namespace VolejbalVrsovice.App.Helpers
         }
     }
 
-    /// <summary><c>null</c> → viditelné, cokoli jiného → <see cref="Visibility.Collapsed"/>.</summary>
-    public sealed class NullToVisibleConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return value == null ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotSupportedException();
-        }
-    }
-
     public static class WindowBehaviors
     {
         /// <summary>Po otevření okna přesune fokus na první pole, do kterého lze psát.</summary>

@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -102,7 +101,7 @@ namespace VolejbalVrsovice.App
 
             // Protokol až pod zámkem – do souboru tak vždy zapisuje jen jedna instance.
             Log.Logger = LoggingSetup.CreateLogger(paths.LogsDirectory);
-            Log.Information("Aplikace spuštěna, verze {Version}", GetVersion());
+            Log.Information("Aplikace spuštěna, verze {Version}", AppInfo.Version);
 
             _services = ServiceRegistration.BuildServiceProvider(paths, Log.Logger);
 
@@ -118,12 +117,6 @@ namespace VolejbalVrsovice.App
 
             // 5) Přihlášení. První spuštění (vytvoření databáze) proběhne už za zobrazeným oknem.
             _services.GetRequiredService<AppController>().Start();
-        }
-
-        private static string GetVersion()
-        {
-            var attribute = typeof(App).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-            return attribute == null ? "?" : attribute.InformationalVersion;
         }
 
         private static void ApplyCzechCulture()

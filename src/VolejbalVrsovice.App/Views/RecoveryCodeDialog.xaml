@@ -10,7 +10,7 @@
         <TextBlock Text="{Binding Explanation}" Style="{StaticResource BodyText}" />
 
         <!-- Kód je v poli jen pro čtení, aby šel označit a zkopírovat i klávesnicí. -->
-        <Border Background="#F4F6F8" BorderBrush="#C9D1D9" BorderThickness="1" Padding="12" Margin="0,0,0,12">
+        <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,12">
             <TextBox x:Name="CodeBox"
                      Text="{Binding Code, Mode=OneWay}"
                      IsReadOnly="True"
@@ -39,7 +39,7 @@
         <CheckBox x:Name="ConfirmCheckBox" Content="Kód jsem si _bezpečně uložil" IsChecked="{Binding IsConfirmed}" />
 
         <StackPanel Style="{StaticResource DialogButtons}">
-            <Button x:Name="CloseButton" Content="Pokračovat" IsDefault="True" Command="{Binding CloseCommand}" />
+            <Button x:Name="CloseButton" Content="Pokračovat" Style="{StaticResource PrimaryButton}" IsDefault="True" Command="{Binding CloseCommand}" />
         </StackPanel>
     </StackPanel>
 </Window>

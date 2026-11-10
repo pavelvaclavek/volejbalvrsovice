@@ -10,39 +10,58 @@
         h:WindowBehaviors.FocusFirstInput="True"
         Style="{StaticResource AppWindow}">
 
-    <StackPanel Margin="28,24,28,20">
-        <TextBlock Text="Přihlášení" Style="{StaticResource Heading}" />
+    <StackPanel>
+        <!-- Horní tmavě modrý pruh s logem; formulář je pod ním na světlém pozadí. -->
+        <Border Style="{StaticResource HeaderBand}" Padding="28,18">
+            <Image x:Name="LogoImage"
+                   Source="/VolejbalVrsovice;component/Assets/logo-horizontal.png"
+                   Height="68"
+                   HorizontalAlignment="Left"
+                   RenderOptions.BitmapScalingMode="HighQuality"
+                   AutomationProperties.Name="Volejbal Vršovice" />
+        </Border>
 
-        <StackPanel IsEnabled="{Binding IsInputEnabled}">
-            <Label Content="_E-mail" Target="{Binding ElementName=EmailBox}" />
-            <TextBox x:Name="EmailBox" Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
+        <StackPanel Margin="28,22,28,14">
+            <TextBlock Text="Přihlášení" Style="{StaticResource Heading}" />
 
-            <Label Content="_Heslo" Target="{Binding ElementName=PasswordBox}" />
-            <PasswordBox x:Name="PasswordBox" h:PasswordBoxBinding.Password="{Binding Password}" />
+            <StackPanel IsEnabled="{Binding IsInputEnabled}">
+                <Label Content="_E-mail" Target="{Binding ElementName=EmailBox}" />
+                <TextBox x:Name="EmailBox" Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}" />
+
+                <Label Content="_Heslo" Target="{Binding ElementName=PasswordBox}" />
+                <PasswordBox x:Name="PasswordBox" h:PasswordBoxBinding.Password="{Binding Password}" />
+            </StackPanel>
+
+            <TextBlock x:Name="ErrorText"
+                       Text="{Binding ErrorMessage}"
+                       Style="{StaticResource FormError}"
+                       Visibility="{Binding ErrorMessage, Converter={StaticResource TextToVisibility}}" />
+
+            <StackPanel Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
+                <ProgressBar Style="{StaticResource BusyBar}" />
+                <TextBlock x:Name="StatusText"
+                           Text="{Binding StatusMessage}"
+                           Margin="0,0,0,12"
+                           Visibility="{Binding StatusMessage, Converter={StaticResource TextToVisibility}}" />
+            </StackPanel>
+
+            <Button x:Name="LoginButton"
+                    Content="Přihlásit"
+                    Style="{StaticResource PrimaryButton}"
+                    IsDefault="True"
+                    Command="{Binding LoginCommand}" />
+
+            <Button x:Name="ForgotPasswordLink"
+                    Content="Zapomenuté heslo"
+                    Style="{StaticResource LinkButton}"
+                    Command="{Binding ForgotPasswordCommand}"
+                    Margin="0,14,0,0" />
+
+            <TextBlock x:Name="VersionText"
+                       Text="{Binding VersionText}"
+                       Style="{StaticResource MutedText}"
+                       HorizontalAlignment="Center"
+                       Margin="0,16,0,0" />
         </StackPanel>
-
-        <TextBlock x:Name="ErrorText"
-                   Text="{Binding ErrorMessage}"
-                   Style="{StaticResource FormError}"
-                   Visibility="{Binding ErrorMessage, Converter={StaticResource TextToVisibility}}" />
-
-        <StackPanel Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
-            <ProgressBar Style="{StaticResource BusyBar}" />
-            <TextBlock x:Name="StatusText"
-                       Text="{Binding StatusMessage}"
-                       Margin="0,0,0,12"
-                       Visibility="{Binding StatusMessage, Converter={StaticResource TextToVisibility}}" />
-        </StackPanel>
-
-        <Button x:Name="LoginButton"
-                Content="Přihlásit"
-                IsDefault="True"
-                Command="{Binding LoginCommand}" />
-
-        <Button x:Name="ForgotPasswordLink"
-                Content="Zapomenuté heslo"
-                Style="{StaticResource LinkButton}"
-                Command="{Binding ForgotPasswordCommand}"
-                Margin="0,14,0,0" />
     </StackPanel>
 </Window>

@@ -123,6 +123,12 @@ namespace VolejbalVrsovice.App.ViewModels
             get { return IsReady && !IsBusy && !_isSignedIn; }
         }
 
+        /// <summary>Verze aplikace zobrazená pod formulářem.</summary>
+        public string VersionText
+        {
+            get { return AppInfo.VersionText; }
+        }
+
         /// <summary>
         /// Připraví úložiště dat. Při prvním spuštění vytvoří databázi a výchozího správce – trvá to
         /// několik sekund, proto to běží až po zobrazení okna.

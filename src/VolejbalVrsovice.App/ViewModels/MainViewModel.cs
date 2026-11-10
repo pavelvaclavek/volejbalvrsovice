@@ -52,9 +52,18 @@ namespace VolejbalVrsovice.App.ViewModels
         }
     }
 
-    /// <summary>ViewModel hlavního okna: menu podle role, přihlášený uživatel, změna hesla, odhlášení.</summary>
+    /// <summary>
+    /// ViewModel hlavního okna: hlavička (klub, přihlášený uživatel, změna hesla, odhlášení),
+    /// levé menu podle role a právě zobrazená stránka.
+    /// </summary>
     public sealed class MainViewModel : ObservableObject
     {
+        public const string TeamsMenu = "Družstva";
+        public const string PlayersMenu = "Hráči";
+        public const string ContributionsMenu = "Příspěvky";
+        public const string EventsMenu = "Akce";
+        public const string UsersMenu = "Uživatelé";
+
         private readonly IAuthService _auth;
         private readonly IDialogService _dialogs;
 
@@ -92,6 +101,22 @@ namespace VolejbalVrsovice.App.ViewModels
         public string Title
         {
             get { return AppInfo.ApplicationTitle; }
+        }
+
+        /// <summary>Název klubu v hlavičce (klub se nemodeluje, je to konstanta).</summary>
+        public string ClubName
+        {
+            get { return AppInfo.ClubName; }
+        }
+
+        public string Subtitle
+        {
+            get { return AppInfo.ApplicationSubtitle; }
+        }
+
+        public string VersionText
+        {
+            get { return AppInfo.VersionText; }
         }
 
         public string UserName { get; }
@@ -184,12 +209,18 @@ namespace VolejbalVrsovice.App.ViewModels
 
         private IReadOnlyList<MenuItemViewModel> BuildMenu(AppUser user, Func<UsersViewModel> createUsersPage)
         {
-            var items = new List<MenuItemViewModel>();
+            var items = new List<MenuItemViewModel>
+            {
+                Placeholder(TeamsMenu, "Družstva klubu a jejich pravidelné tréninky."),
+                Placeholder(PlayersMenu, "Přehled hráčů družstva se saldem a karta hráče."),
+                Placeholder(ContributionsMenu, "Příspěvky hráčů – opisy bankovních a hotovostních příjmů."),
+                Placeholder(EventsMenu, "Akce a náklady jejich účastníků."),
+            };
 
             // Správa uživatelů je jen pro roli Správce.
             if (user.IsAdmin)
             {
-                items.Add(new MenuItemViewModel("Uživatelé", () =>
+                items.Add(new MenuItemViewModel(UsersMenu, () =>
                 {
                     var page = createUsersPage();
                     page.SelfDeactivated += (sender, args) => RequestLogout();
@@ -198,6 +229,11 @@ namespace VolejbalVrsovice.App.ViewModels
             }
 
             return items;
+        }
+
+        private static MenuItemViewModel Placeholder(string title, string description)
+        {
+            return new MenuItemViewModel(title, () => new PlaceholderPageViewModel(title, description));
         }
 
         private void ChangePassword()

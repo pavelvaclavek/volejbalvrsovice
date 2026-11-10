@@ -1,0 +1,39 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Barevné schéma (zadání, sekce 4): tmavě modrá + bílá, akcentní světle modrá.
+        Červená se používá JEN pro záporné saldo a chyby.
+
+        Základní barvy jsou odečtené přímo z loga oddílu (nástrojem z PNG, ne od oka):
+          #002E5D – tmavě modrá hlavy dravce
+          #0085E9 – světle modrá štítu
+          #FFFFFF – bílá
+    -->
+    <Color x:Key="NavyColor">#002E5D</Color>
+    <Color x:Key="AccentColor">#0085E9</Color>
+    <Color x:Key="WhiteColor">#FFFFFF</Color>
+
+    <!-- Odvozené odstíny -->
+    <Color x:Key="AccentTintColor">#E6F3FD</Color>     <!-- 10 % akcentu na bílé: vybraný řádek, vybraná položka menu -->
+    <Color x:Key="HeaderMutedColor">#B3C4D6</Color>    <!-- vedlejší text na tmavě modré hlavičce -->
+    <Color x:Key="TextColor">#1A2733</Color>
+    <Color x:Key="MutedTextColor">#5A6B7C</Color>
+    <Color x:Key="BorderColor">#C5D0DB</Color>
+    <Color x:Key="LineColor">#E3E9EF</Color>           <!-- jemné linky v tabulkách -->
+    <Color x:Key="SurfaceColor">#F3F6F9</Color>        <!-- světlé plochy: menu, záhlaví tabulek -->
+    <Color x:Key="DangerColor">#C62828</Color>         <!-- jen záporné saldo a chyby -->
+
+    <SolidColorBrush x:Key="NavyBrush" Color="{StaticResource NavyColor}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource WhiteColor}" />
+    <SolidColorBrush x:Key="AccentTintBrush" Color="{StaticResource AccentTintColor}" />
+    <SolidColorBrush x:Key="HeaderMutedBrush" Color="{StaticResource HeaderMutedColor}" />
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
+    <SolidColorBrush x:Key="MutedTextBrush" Color="{StaticResource MutedTextColor}" />
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
+    <SolidColorBrush x:Key="LineBrush" Color="{StaticResource LineColor}" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}" />
+
+</ResourceDictionary>

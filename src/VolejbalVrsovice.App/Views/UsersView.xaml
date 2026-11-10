@@ -6,7 +6,7 @@
         <TextBlock DockPanel.Dock="Top" Text="Uživatelé" Style="{StaticResource Heading}" />
 
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
-            <Button x:Name="AddUserButton" Content="_Přidat uživatele…" Command="{Binding AddUserCommand}" />
+            <Button x:Name="AddUserButton" Content="_Přidat uživatele…" Style="{StaticResource PrimaryButton}" Command="{Binding AddUserCommand}" />
             <Button x:Name="ResetPasswordButton" Content="_Reset hesla…" Command="{Binding ResetPasswordCommand}" Margin="8,0,0,0" />
             <Button x:Name="DeactivateButton" Content="_Deaktivovat" Command="{Binding DeactivateCommand}" Margin="8,0,0,0" />
             <Button x:Name="NewRecoveryCodeButton" Content="Nový _záchranný kód…" Command="{Binding NewRecoveryCodeCommand}" Margin="24,0,0,0" />
@@ -19,11 +19,9 @@
                   AutoGenerateColumns="False"
                   IsReadOnly="True"
                   SelectionMode="Single"
-                  HeadersVisibility="Column"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
-                  CanUserReorderColumns="False"
-                  GridLinesVisibility="Horizontal">
+                  CanUserReorderColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="E-mail" Binding="{Binding Email, Mode=OneWay}" Width="2*" />
                 <DataGridTextColumn Header="Jméno" Binding="{Binding DisplayName, Mode=OneWay}" Width="2*" />

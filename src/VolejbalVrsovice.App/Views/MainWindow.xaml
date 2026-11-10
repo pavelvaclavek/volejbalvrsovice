@@ -5,7 +5,7 @@
         xmlns:views="clr-namespace:VolejbalVrsovice.App.Views"
         Title="{Binding Title}"
         Width="1100" Height="700"
-        MinWidth="820" MinHeight="520"
+        MinWidth="860" MinHeight="540"
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource AppWindow}">
 
@@ -14,40 +14,81 @@
         <DataTemplate DataType="{x:Type vm:UsersViewModel}">
             <views:UsersView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PlaceholderPageViewModel}">
+            <views:PlaceholderView />
+        </DataTemplate>
     </Window.Resources>
 
     <DockPanel>
-        <!-- Horní lišta: přihlášený uživatel, změna hesla, odhlášení. -->
-        <Border DockPanel.Dock="Top" BorderBrush="#D0D7DE" BorderThickness="0,0,0,1" Padding="16,10">
+        <!-- Hlavička: tmavě modrý pruh s logem, název klubu, přihlášený uživatel, odhlášení. -->
+        <Border DockPanel.Dock="Top" Style="{StaticResource HeaderBand}" Padding="16,10">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock x:Name="UserNameText" Text="{Binding UserName}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    <TextBlock x:Name="UserRoleText" Text="{Binding UserRoleText, StringFormat=' ({0})'}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                    <Button x:Name="ChangePasswordButton" Content="Změnit heslo" Command="{Binding ChangePasswordCommand}" />
-                    <Button x:Name="LogoutButton" Content="Odhlásit" Command="{Binding LogoutCommand}" Margin="8,0,0,0" />
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock x:Name="UserNameText"
+                                   Text="{Binding UserName}"
+                                   Foreground="{StaticResource WhiteBrush}"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Right" />
+                        <TextBlock x:Name="UserRoleText"
+                                   Text="{Binding UserRoleText}"
+                                   Foreground="{StaticResource HeaderMutedBrush}"
+                                   FontSize="11"
+                                   HorizontalAlignment="Right" />
+                    </StackPanel>
+                    <Button x:Name="ChangePasswordButton"
+                            Content="Změnit heslo"
+                            Style="{StaticResource HeaderButton}"
+                            Command="{Binding ChangePasswordCommand}" />
+                    <Button x:Name="LogoutButton"
+                            Content="Odhlásit"
+                            Style="{StaticResource HeaderButton}"
+                            Command="{Binding LogoutCommand}"
+                            Margin="8,0,0,0" />
                 </StackPanel>
 
-                <TextBlock Text="Volejbal Vršovice" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <Image x:Name="LogoImage"
+                       Source="/VolejbalVrsovice;component/Assets/logo-horizontal.png"
+                       Height="48"
+                       VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       AutomationProperties.Name="Volejbal Vršovice" />
+
+                <StackPanel VerticalAlignment="Center" Margin="20,0,0,0">
+                    <TextBlock x:Name="ClubNameText"
+                               Text="{Binding ClubName}"
+                               Foreground="{StaticResource WhiteBrush}"
+                               FontSize="15"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Subtitle}"
+                               Foreground="{StaticResource HeaderMutedBrush}"
+                               FontSize="11" />
+                </StackPanel>
             </DockPanel>
         </Border>
 
-        <!-- Levé menu podle role. -->
-        <ListBox x:Name="MenuList"
-                 DockPanel.Dock="Left"
-                 Width="200"
-                 BorderThickness="0,0,1,0"
-                 BorderBrush="#D0D7DE"
-                 ItemsSource="{Binding MenuItems}"
-                 SelectedItem="{Binding SelectedMenuItem}"
-                 IsEnabled="{Binding IsNavigationEnabled}"
-                 DisplayMemberPath="Title" />
+        <!-- Levé menu podle role; dole verze aplikace. -->
+        <Border DockPanel.Dock="Left"
+                Width="200"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,1,0">
+            <DockPanel>
+                <TextBlock x:Name="VersionText"
+                           DockPanel.Dock="Bottom"
+                           Text="{Binding VersionText}"
+                           Style="{StaticResource MutedText}"
+                           Margin="20,10" />
+                <ListBox x:Name="MenuList"
+                         Style="{StaticResource MenuList}"
+                         ItemsSource="{Binding MenuItems}"
+                         SelectedItem="{Binding SelectedMenuItem}"
+                         IsEnabled="{Binding IsNavigationEnabled}"
+                         DisplayMemberPath="Title"
+                         Margin="0,8,0,0" />
+            </DockPanel>
+        </Border>
 
-        <Grid Margin="20">
-            <ContentControl x:Name="PageHost" Content="{Binding CurrentPage}" Focusable="False" />
-
-            <TextBlock Text="Evidence družstev, hráčů, příspěvků a akcí bude doplněna v dalších krocích."
-                       Style="{StaticResource BodyText}"
-                       Visibility="{Binding CurrentPage, Converter={StaticResource NullToVisible}}" />
-        </Grid>
+        <ContentControl x:Name="PageHost" Content="{Binding CurrentPage}" Margin="24,20" Focusable="False" />
     </DockPanel>
 </Window>

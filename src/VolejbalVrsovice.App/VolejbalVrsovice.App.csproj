@@ -11,7 +11,18 @@
     <!-- Uživatel spouští VolejbalVrsovice.exe (zadání, sekce 3). -->
     <AssemblyName>VolejbalVrsovice</AssemblyName>
     <RootNamespace>VolejbalVrsovice.App</RootNamespace>
+
+    <!-- Ikona .exe, okna a hlavního panelu = emblém oddílu (zadání, sekce 4). -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Převzaté logo oddílu (nekreslí se ani nepřekresluje). Příprava: zmenšení a ořez nástrojem z originálu
+         https://www.volejbal-vrsovice.cz/img/picture/314/%3Adesign%3Alogofirms%3A1000000390%3Ahorizontalni-pro-tmave-pozadi.png -->
+    <Resource Include="Assets\logo-horizontal.png" />
+    <Resource Include="Assets\logo-emblem.png" />
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />

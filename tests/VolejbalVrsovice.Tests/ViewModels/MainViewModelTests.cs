@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using VolejbalVrsovice.App;
 using VolejbalVrsovice.App.ViewModels;
 using VolejbalVrsovice.Core.Entities;
 using VolejbalVrsovice.Tests.TestSupport;
@@ -21,12 +22,12 @@ namespace VolejbalVrsovice.Tests.ViewModels
         }
 
         [Fact]
-        public void Admin_sees_the_users_menu()
+        public void Admin_sees_all_sections_including_users()
         {
             var viewModel = Create(TestUsers.Admin());
 
             Assert.True(viewModel.IsAdmin);
-            Assert.Contains(viewModel.MenuItems, item => item.Title == "Uživatelé");
+            Assert.Equal(new[] { "Družstva", "Hráči", "Příspěvky", "Akce", "Uživatelé" }, viewModel.MenuItems.Select(item => item.Title));
             Assert.Equal("Správce", viewModel.UserName);
             Assert.Equal("Správce", viewModel.UserRoleText);
         }
@@ -37,9 +38,37 @@ namespace VolejbalVrsovice.Tests.ViewModels
             var viewModel = Create(TestUsers.Ordinary());
 
             Assert.False(viewModel.IsAdmin);
+            Assert.Equal(new[] { "Družstva", "Hráči", "Příspěvky", "Akce" }, viewModel.MenuItems.Select(item => item.Title));
             Assert.DoesNotContain(viewModel.MenuItems, item => item.Title == "Uživatelé");
             Assert.Equal("Petr Svoboda", viewModel.UserName);
             Assert.Equal("Uživatel", viewModel.UserRoleText);
+        }
+
+        [Fact]
+        public void First_section_is_open_after_login()
+        {
+            var viewModel = Create(TestUsers.Ordinary());
+
+            Assert.Equal("Družstva", viewModel.SelectedMenuItem.Title);
+            var page = Assert.IsType<PlaceholderPageViewModel>(viewModel.CurrentPage);
+            Assert.Equal("Družstva", page.Title);
+        }
+
+        [Theory]
+        [InlineData("Družstva")]
+        [InlineData("Hráči")]
+        [InlineData("Příspěvky")]
+        [InlineData("Akce")]
+        public void Sections_that_are_not_built_yet_say_so(string section)
+        {
+            var viewModel = Create(TestUsers.Ordinary());
+
+            viewModel.SelectedMenuItem = viewModel.MenuItems.Single(item => item.Title == section);
+
+            var page = Assert.IsType<PlaceholderPageViewModel>(viewModel.CurrentPage);
+            Assert.Equal(section, page.Title);
+            Assert.False(string.IsNullOrWhiteSpace(page.Description));
+            Assert.Contains("připravuje", page.Notice);
         }
 
         [Fact]
@@ -50,6 +79,17 @@ namespace VolejbalVrsovice.Tests.ViewModels
             viewModel.SelectedMenuItem = viewModel.MenuItems.Single(item => item.Title == "Uživatelé");
 
             Assert.IsType<UsersViewModel>(viewModel.CurrentPage);
+        }
+
+        [Fact]
+        public void Header_shows_the_club_name_and_the_application_version()
+        {
+            var viewModel = Create(TestUsers.Ordinary());
+
+            Assert.Equal("TJ Sokol Praha Vršovice", viewModel.ClubName);
+            Assert.Equal("Evidence příspěvků a čerpání", viewModel.Subtitle);
+            Assert.Equal("Verze " + AppInfo.Version, viewModel.VersionText);
+            Assert.Equal("Volejbal Vršovice – evidence příspěvků a čerpání", viewModel.Title);
         }
 
         [Fact]
@@ -100,7 +140,7 @@ namespace VolejbalVrsovice.Tests.ViewModels
             Assert.False(viewModel.LogoutCommand.CanExecute(null));
             Assert.False(viewModel.ChangePasswordCommand.CanExecute(null));
 
-            viewModel.SelectedMenuItem = null;   // pokus o přepnutí stránky se ignoruje
+            viewModel.SelectedMenuItem = viewModel.MenuItems[0];   // pokus o přepnutí stránky se ignoruje
             Assert.Same(selectedBefore, viewModel.SelectedMenuItem);
             Assert.Same(page, viewModel.CurrentPage);
 

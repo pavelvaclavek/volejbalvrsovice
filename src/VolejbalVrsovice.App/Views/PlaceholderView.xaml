@@ -1,0 +1,11 @@
+<UserControl x:Class="VolejbalVrsovice.App.Views.PlaceholderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Stránka části aplikace, která ještě není hotová. -->
+    <StackPanel MaxWidth="640" HorizontalAlignment="Left">
+        <TextBlock x:Name="PageTitle" Text="{Binding Title}" Style="{StaticResource Heading}" />
+        <TextBlock x:Name="PageDescription" Text="{Binding Description}" Style="{StaticResource BodyText}" />
+        <TextBlock Text="{Binding Notice}" Style="{StaticResource BodyText}" Foreground="{StaticResource MutedTextBrush}" />
+    </StackPanel>
+</UserControl>
