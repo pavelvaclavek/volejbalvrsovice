@@ -17,7 +17,7 @@ Potřebujete Windows 10 (22H2 nebo novější) nebo Windows 11, 64bitové. Nic d
 1. **Odblokujte stažený ZIP** ještě před rozbalením: pravým tlačítkem → *Vlastnosti* → dole zaškrtněte *Odblokovat* → *OK*.
 2. Rozbalte ho do složky, kam smíte zapisovat, například `C:\VolejbalVrsovice` – ne do *Program Files*.
 3. Spusťte `VolejbalVrsovice.exe`. Ozve-li se **SmartScreen** („Systém Windows ochránil váš počítač“), klepněte na *Další informace* a potom na *Přesto spustit* – aplikace nemá digitální podpis.
-4. Přihlaste se výchozím účtem: e-mail `admin@admin.cz`, heslo `admin`. Aplikace si hned vynutí vlastní heslo a potom jednou ukáže **záchranný kód** – uložte ho na bezpečné místo.
+4. Přihlaste se výchozím účtem: e-mail a heslo výchozího účtu poptejte na: pavel.vaclavek@gmail.com. Aplikace si hned vynutí vlastní heslo a potom jednou ukáže **záchranný kód** – uložte ho na bezpečné místo.
 
 Podrobný návod je v souboru `NAVOD.txt` uvnitř ZIPu.
 
